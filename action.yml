@@ -23,7 +23,7 @@ inputs:
   skip-tag:
     description: "Indicates if wether the workflow will create tag or not"
     required: false
-    default: false
+    default: "false"
   workspace-name:
     description: "Name of npm-workspace where version need to be incremented. Can be specified in case of project type 'Node'"
     required: false
