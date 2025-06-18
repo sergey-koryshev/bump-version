@@ -16,14 +16,14 @@ v1.0.1
 
 | Parameter Name | Description |
 | - | - |
-| **app-name** | project name (used for commit name) |
-| **project-type** | project type: `Node`, `Posh`, `Custom` |
-| **version-configuration-path** | full path to version configuration |
-| **posh-module-name** | name of powershell module, needs to be specified in case of project type `Posh` |
-| **posh-custom-module-path** | path to powershell module with custom logic to get/set version, needs to be specified in case of project type `Custom` |
-| **skip-tag** | indicates if wether the workflow will create tag or not |
-| **workspace-name** | name of npm-workspace where version need to be incremented. Can be specified in case of project type `Node` |
-| **override-increment-parts** | comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on PR's label |
+| **app-name** | Project name (used for commit name) |
+| **project-type** | Project type: `Node`, `Posh`, `Custom` |
+| **version-configuration-path** | Full path to version configuration |
+| **posh-module-name** | Name of powershell module, needs to be specified in case of project type `Posh` |
+| **posh-custom-module-path** | Path to powershell module with custom logic to get/set version, needs to be specified in case of project type `Custom` |
+| **skip-tag** | Indicates if wether the workflow will create tag or not |
+| **workspace-name** | Name of npm-workspace where version need to be incremented. Can be specified in case of project type `Node` |
+| **override-increment-parts** | Comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on PR's label |
 
 **Notes**
 
