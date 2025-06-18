@@ -14,10 +14,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install ActionLint
-        run: |
-          go install github.com/rhysd/actionlint/cmd/actionlint@latest
+      - name: Download ActionLint
+        id: get-actionlint
+        shell: bash
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
 
       - name: Validate action.yml
-        run: |
-          actionlint action.yml
+        shell: bash
+        run: ${{ steps.get-actionlint.outputs.executable }} action.yml
