@@ -1,0 +1,112 @@
+name: "Bump Version"
+description: "The action increments version of specified project and submit it to repository"
+
+inputs:
+  project-type:
+    required: true
+    type: string
+  version-configuration-path:
+    required: true
+    type: string
+  app-name:
+    required: false
+    type: string
+    default: ""
+  posh-module-name:
+    required: false
+    type: string
+  posh-custom-module-path:
+    required: false
+    type: string
+  skip-tag:
+    required: false
+    default: false
+    type: boolean
+  workspace-name:
+    required: false
+    type: string
+    default: ""
+  override-increment-parts:
+    required: false
+    type: string
+    default: ""
+
+outputs:
+  new-version:
+    description: "Incremented version"
+    value: ${{ steps.bump-version.outputs.new-version }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout build-system repository
+      uses: actions/checkout@v4
+      with:
+        repository: sergey-koryshev/build-system
+        path: sk-build-system
+        ref: version-helper-v1.4.0
+    - name: Pull latest changes
+      run: git pull
+    - name: Bump version
+      id: bump-version
+      shell: pwsh
+      run: |
+        $env:PSModulePath = $env:PSModulePath + "$([System.IO.Path]::PathSeparator)$(Join-Path "${{ github.workspace }}" "sk-build-system" "scripts/ps")"
+        Import-Module VersionHelper -Force -Verbose
+        $splitRepositoryName = "${{ github.repository }}" -split "/"
+
+        if ($splitRepositoryName.Length -ne 2) {
+          throw "Repository name cannot be parsed: ${{ github.repository }}"
+        }
+
+        $fullPoShCustomModulePath = $null
+
+        if (-not ([string]::IsNullOrWhiteSpace("${{ inputs.posh-custom-module-path }}"))) {
+          $fullPoShCustomModulePath = $(Join-Path "${{ github.workspace }}" "${{ inputs.posh-custom-module-path }}")
+        }
+
+        $overrideIncrementParts = @()
+
+        if (-not ([string]::IsNullOrWhiteSpace("${{ inputs.override-increment-parts }}"))) {
+          $overrideIncrementParts = "${{ inputs.override-increment-parts }}" -split ","
+        }
+
+        $newVersion = Submit-NewVersionLabel -ProjectType ${{ inputs.project-type }} -PowerShellModuleName "${{ inputs.posh-module-name }}" -CustomPowershellModulePath $fullPoShCustomModulePath -SHA "${{ github.sha }}" -Owner $splitRepositoryName[0] -Repository $splitRepositoryName[1] -VersionConfigurationPath (Join-Path "${{ github.workspace }}" "${{ inputs.version-configuration-path }}") -AuthToken ${{ secrets.GITHUB_TOKEN }} -WorkspaceName "${{ inputs.workspace-name }}" -OverrideIncrementParts $overrideIncrementParts -Verbose
+        "new-version=$newVersion" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+    - name: Commit New Version
+      shell: pwsh
+      run: |
+        function Invoke-CommandSafely {
+          param(
+            [string]
+            $Command
+          )
+
+          Invoke-Expression "& $Command" -ErrorAction Stop
+          
+          if ($LASTEXITCODE -ne 0) {
+            throw "Command [$Command] failed to execute."
+          }
+        }
+
+        Write-Host "====== Setting up git ======"
+        Invoke-CommandSafely "git config --global user.name ""$env:GITHUB_ACTOR"""
+        Invoke-CommandSafely "git config --global user.email ""$env:GITHUB_ACTOR@users.noreply.github.com"""
+        Invoke-CommandSafely "git config --global push.followTags true"
+
+        Write-Host
+        Write-Host "====== Pulling last changes ======"
+        Invoke-CommandSafely "git stash"
+        Invoke-CommandSafely "git pull"
+        Invoke-CommandSafely "git stash pop"
+
+        Write-Host
+        Write-Host "====== Submitting changes ======"
+        $annotation = "Bumped ${{ inputs.app-name }}$([string]::IsNullOrWhiteSpace('${{ inputs.app-name }}') ? [string]::Empty : ' ')version to ${{ env.new-version }}"
+        Invoke-CommandSafely "git commit -am ""[automated] $annotation [skip ci]"""
+
+        if ("${{ inputs.skip-tag }}" -eq "false") {
+          Invoke-CommandSafely "git tag -a -m ""$annotation"" ""${{ inputs.app-name }}$([string]::IsNullOrWhiteSpace('${{ inputs.app-name }}') ? [string]::Empty : '-')v${{ env.new-version }}"""
+        }
+
+        Invoke-CommandSafely "git push"
