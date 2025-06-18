@@ -21,7 +21,7 @@ jobs:
 
       - name: Install ActionLint
         run: |
-          npm install -g @rhysd/actionlint
+          npm install -g node-actionlint
 
       - name: Validate action.yml
         run: |
