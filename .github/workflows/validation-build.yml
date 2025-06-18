@@ -27,14 +27,8 @@ jobs:
         run: |
           yamllint action.yml
 
-      - name: Install JSON schema validator
-        run: |
-          npm install -g ajv-cli
-
-      - name: Download GitHub Action schema
-        run: |
-          curl -sSL https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/github-action.json -o github-action.json
-
-      - name: Validate action.yml against GitHub Action schema
-        run: |
-          ajv validate -s github-action.json -d action.yml
+      - name: Validate action.yml against a remote schema
+        uses: cardinalby/schema-validator-action@v3
+        with:
+          file: 'action.yml'
+          schema: 'https://json.schemastore.org/github-action.json'
