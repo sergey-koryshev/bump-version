@@ -37,4 +37,4 @@ jobs:
 
       - name: Validate action.yml against GitHub Action schema
         run: |
-          ajv compile -s github-action.json -r action.yml
+          ajv validate -s github-action.json -d action.yml
