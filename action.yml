@@ -19,15 +19,17 @@ inputs:
     description: "Name of powershell module, needs to be specified in case of project type 'Posh'"
     required: false
     type: string
+    default: ""
   posh-custom-module-path:
     description: "Path to powershell module with custom logic to get/set version, needs to be specified in case of project type 'Custom'"
     required: false
     type: string
+    default: ""
   skip-tag:
     description: "Indicates if wether the workflow will create tag or not"
     required: false
-    default: false
     type: boolean
+    default: false
   workspace-name:
     description: "Name of npm-workspace where version need to be incremented. Can be specified in case of project type 'Node'"
     required: false
