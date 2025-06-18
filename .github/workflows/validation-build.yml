@@ -16,9 +16,7 @@ jobs:
 
       - name: Install ActionLint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- -b .
-          chmod +x ./actionlint
-          mv ./actionlint /usr/local/bin/
+          go install github.com/rhysd/actionlint/cmd/actionlint@latest
 
       - name: Validate action.yml
         run: |
