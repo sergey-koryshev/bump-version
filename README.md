@@ -1,0 +1,57 @@
+# Bump Version action
+
+Increments version of specified project and submit it to repository with the following commit:
+
+```
+[automated] Bumped My App version to 1.0.1 [skip ci]
+```
+
+and tag (in case of `skip-tag` parameter is not specified):
+
+```
+v1.0.1
+```
+
+**Input Parameters:**
+
+| Parameter Name | Description |
+| - | - |
+| **app-name** | project name (used for commit name) |
+| **project-type** | project type: `Node`, `Posh`, `Custom` |
+| **version-configuration-path** | full path to version configuration |
+| **posh-module-name** | name of powershell module, needs to be specified in case of project type `Posh` |
+| **posh-custom-module-path** | path to powershell module with custom logic to get/set version, needs to be specified in case of project type `Custom` |
+| **skip-tag** | indicates if wether the workflow will create tag or not |
+| **workspace-name** | name of npm-workspace where version need to be incremented. Can be specified in case of project type `Node` |
+| **override-increment-parts** | comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on PR's label |
+
+**Notes**
+
+If you specify project type as `Custom` then you need to specify path to custom `PS` module which must have the following functions implemented:
+
+```posh
+function Get-Version {
+  [CmdletBinding()]
+  [OutputType([string])]
+  param ()
+
+  process {
+    ...
+  }
+}
+
+function Set-Version {
+  [CmdletBinding()]
+  param (
+    [string]
+    $OldVersion,
+
+    [string]
+    $NewVersion
+  )
+  
+  process {
+    ...
+  }
+}
+```
