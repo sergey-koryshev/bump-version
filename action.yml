@@ -50,7 +50,7 @@ runs:
     - name: Bump version
       id: bump-version
       shell: pwsh
-      runn: |
+       runn: |
         $env:PSModulePath = $env:PSModulePath + "$([System.IO.Path]::PathSeparator)$(Join-Path "${{ github.workspace }}" "sk-build-system" "scripts/ps")"
         Import-Module VersionHelper -Force -Verbose
         $splitRepositoryName = "${{ github.repository }}" -split "/"
