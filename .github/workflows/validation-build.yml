@@ -25,4 +25,4 @@ jobs:
 
       - name: Validate action.yml
         run: |
-          actionlint action.yml
+          node-actionlint action.yml
