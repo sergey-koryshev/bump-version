@@ -1,0 +1,16 @@
+name: Validation Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-yaml:
+    name: "Validate action file"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: YAML linter
+        run: yamllint action.yml
