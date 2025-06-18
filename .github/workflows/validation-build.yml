@@ -14,15 +14,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Install ActionLint
         run: |
-          npm install -g node-actionlint
+          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- -b .
+          chmod +x ./actionlint
+          mv ./actionlint /usr/local/bin/
 
       - name: Validate action.yml
         run: |
-          node-actionlint action.yml
+          actionlint action.yml
