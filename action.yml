@@ -40,33 +40,23 @@ runs:
         path: sk-build-system
         ref: version-helper-v1.4.0
     - name: Pull latest changes
+      shell: bash
       run: git pull
     - name: Bump version
       id: bump-version
       shell: pwsh
       run: |
-        $env:PSModulePath = $env:PSModulePath + "$([System.IO.Path]::PathSeparator)$(Join-Path "${{ github.workspace }}" "sk-build-system" "scripts/ps")"
-        Import-Module VersionHelper -Force -Verbose
-        $splitRepositoryName = "${{ github.repository }}" -split "/"
-
-        if ($splitRepositoryName.Length -ne 2) {
-          throw "Repository name cannot be parsed: ${{ github.repository }}"
+        ./build/bump-version-step.ps1 @{
+          GithubWorkspace = "${{ github.workspace }}"
+          GithubRepository = "${{ github.repository }}"
+          PoshCustomModulePath = "${{ inputs.posh-custom-module-path }}"
+          OverrideIncrementParts = "${{ inputs.override-increment-parts }}"
+          ProjectType = ${{ inputs.project-type }}
+          PoshModuleName = "${{ inputs.posh-module-name }}"
+          SHA = "${{ github.sha }}"
+          VersionConfigurationPath = "${{ inputs.version-configuration-path }}"
+          WorkspaceName = "${{ inputs.workspace-name }}"
         }
-
-        $fullPoShCustomModulePath = $null
-
-        if (-not ([string]::IsNullOrWhiteSpace("${{ inputs.posh-custom-module-path }}"))) {
-          $fullPoShCustomModulePath = $(Join-Path "${{ github.workspace }}" "${{ inputs.posh-custom-module-path }}")
-        }
-
-        $overrideIncrementParts = @()
-
-        if (-not ([string]::IsNullOrWhiteSpace("${{ inputs.override-increment-parts }}"))) {
-          $overrideIncrementParts = "${{ inputs.override-increment-parts }}" -split ","
-        }
-
-        $newVersion = Submit-NewVersionLabel -ProjectType ${{ inputs.project-type }} -PowerShellModuleName "${{ inputs.posh-module-name }}" -CustomPowershellModulePath $fullPoShCustomModulePath -SHA "${{ github.sha }}" -Owner $splitRepositoryName[0] -Repository $splitRepositoryName[1] -VersionConfigurationPath (Join-Path "${{ github.workspace }}" "${{ inputs.version-configuration-path }}") -AuthToken ${{ secrets.GITHUB_TOKEN }} -WorkspaceName "${{ inputs.workspace-name }}" -OverrideIncrementParts $overrideIncrementParts -Verbose
-        "new-version=$newVersion" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
     - name: Commit New Version
       shell: pwsh
       run: |
