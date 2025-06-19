@@ -27,7 +27,7 @@ jobs:
         run: |
           yamllint action.yml
 
-      - name: Validate action.yml against a remote schema
+      - name: Validate action.yml against GitHub Action schema
         uses: cardinalby/schema-validator-action@v3
         with:
           file: 'action.yml'

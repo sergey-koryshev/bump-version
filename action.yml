@@ -1,41 +1,39 @@
-name: "Bump Version"
-description: "The action increments version of specified project and submit it to repository"
-
+name: 'Bump Version'
+description: 'The action increments version of specified project and submit it to repository'
 inputs:
   project-type:
-    description: "Project type: Node, Posh, Custom"
+    description: 'Project type: Node, Posh, Custom'
     required: true
   version-configuration-path:
-    description: "Full path to version configuration"
+    description: 'Full path to version configuration'
     required: true
   app-name:
-    description: "Project name (used for commit name)"
+    description: 'Project name (used for commit name)'
     required: false
-    default: ""
+    default: ''
   posh-module-name:
-    description: "Name of powershell module, needs to be specified in case of project type 'Posh'"
+    description: 'Name of powershell module, needs to be specified in case of project type [Posh]'
     required: false
-    default: ""
+    default: ''
   posh-custom-module-path:
-    description: "Path to powershell module with custom logic to get/set version, needs to be specified in case of project type 'Custom'"
+    description: 'Path to powershell module with custom logic to get/set version, needs to be specified in case of project type [Custom]'
     required: false
-    default: ""
+    default: ''
   skip-tag:
-    description: "Indicates if wether the workflow will create tag or not"
+    description: 'Indicates if wether the workflow will create tag or not'
     required: false
-    default: "false"
+    default: 'false'
   workspace-name:
-    description: "Name of npm-workspace where version need to be incremented. Can be specified in case of project type 'Node'"
+    description: 'Name of npm-workspace where version need to be incremented. Can be specified in case of project type [Node]'
     required: false
-    default: ""
+    default: ''
   override-increment-parts:
-    description: "Comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on PR's label"
+    description: 'Comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on label of PR'
     required: false
-    default: ""
-
+    default: ''
 outputs:
   new-version:
-    description: "Incremented version"
+    description: 'Incremented version'
     value: ${{ steps.bump-version.outputs.new-version }}
 
 runs:
