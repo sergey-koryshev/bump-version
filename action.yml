@@ -25,6 +25,10 @@ inputs:
   override-increment-parts:
     description: 'Comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on label of PR'
     required: false
+  root-path:
+    description: 'Root path of target project'
+    required: false
+    default: '.'
 outputs:
   new-version:
     description: 'Incremented version'
@@ -32,6 +36,9 @@ outputs:
 
 runs:
   using: 'composite'
+  defaults:
+    run:
+      working-directory: ${{ inputs.root-path }}
   steps:
     - name: Checkout build-system repository
       uses: actions/checkout@v4
