@@ -1,159 +1,113 @@
-name: 'Build Deckhouse Module'
-description: 'Build Deckhouse module'
+name: 'Bump Version'
+description: 'The action increments version of specified project and submit it to repository'
 inputs:
-  module_source:
-    description: 'Registry repository address for of the module, e.g., registry.example.com/module-source'
+  project-type:
+    description: 'Project type: Node, Posh, Custom'
     required: true
-  module_name:
-    description: 'Name of the module, e.g., my-module'
+  version-configuration-path:
+    description: 'Full path to version configuration'
     required: true
-  module_tag:
-    description: 'The version of the module to deploy to release channel, e.g., v1.21.1'
-    required: true
-  secondary_repo:
-    description: 'Secondary repository address for module, e.g., registry.example.com/module-source/module_name'
+  app-name:
+    description: 'Project name (used for commit name)'
     required: false
-  svace_enabled:
-    description: 'A boolean value which indicates whether svace analyze will be performed'
+    default: ''
+  posh-module-name:
+    description: 'Name of powershell module, needs to be specified in case of project type [Posh]'
     required: false
-  svace_analyze_host:
-    description: 'fqdn address to the svace analyze vm'
+    default: ''
+  posh-custom-module-path:
+    description: 'Path to powershell module with custom logic to get/set version, needs to be specified in case of project type [Custom]'
     required: false
-  svace_analyze_ssh_user:
-    description: 'ssh user to connect with to svace analyze vm'
+    default: ''
+  skip-tag:
+    description: 'Indicates if wether the workflow will create tag or not'
     required: false
-  svace_analyze_ssh_key:
-    description: "SSH private key for the svace analyze server"
+    default: 'false'
+  workspace-name:
+    description: 'Name of npm-workspace where version need to be incremented. Can be specified in case of project type [Node]'
     required: false
-  source_repo:
-    description: "Source repository address for the module"
+    default: ''
+  override-increment-parts:
+    description: 'Comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on label of PR'
     required: false
-  source_repo_ssh_key:
-    description: "SSH private key for the source repository"
-    required: false
+    default: ''
+outputs:
+  new-version:
+    description: 'Incremented version'
+    value: ${{ steps.bump-version.outputs.new-version }}
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
-    - name: Set secondary repo if input exists
+    - name: Checkout build-system repository
+      uses: actions/checkout@v4
+      with:
+        repository: sergey-koryshev/build-system
+        path: sk-build-system
+        ref: version-helper-v1.4.0
+    - name: Pull latest changes
       shell: bash
-      if: ${{ inputs.secondary_repo != '' }}
-      run: echo "WERF_SECONDARY_REPO_1=${{ inputs.secondary_repo }}" >> $GITHUB_ENV
+      run: git pull
+    - name: Bump version
+      id: bump-version
+      shell: pwsh
+      runn: |
+        $env:PSModulePath = $env:PSModulePath + "$([System.IO.Path]::PathSeparator)$(Join-Path "${{ github.workspace }}" "sk-build-system" "scripts/ps")"
+        Import-Module VersionHelper -Force -Verbose
+        $splitRepositoryName = "${{ github.repository }}" -split "/"
 
-    - name: Prepare ssh-agent
-      if: ${{ inputs.source_repo_ssh_key != '' || inputs.svace_analyze_ssh_key != '' }}
-      shell: bash
-      id: ssh_agent
+        if ($splitRepositoryName.Length -ne 2) {
+          throw "Repository name cannot be parsed: ${{ github.repository }}"
+        }
+
+        $fullPoShCustomModulePath = $null
+
+        if (-not ([string]::IsNullOrWhiteSpace("${{ inputs.posh-custom-module-path }}"))) {
+          $fullPoShCustomModulePath = $(Join-Path "${{ github.workspace }}" "${{ inputs.posh-custom-module-path }}")
+        }
+
+        $overrideIncrementParts = @()
+
+        if (-not ([string]::IsNullOrWhiteSpace("${{ inputs.override-increment-parts }}"))) {
+          $overrideIncrementParts = "${{ inputs.override-increment-parts }}" -split ","
+        }
+
+        $newVersion = Submit-NewVersionLabel -ProjectType ${{ inputs.project-type }} -PowerShellModuleName "${{ inputs.posh-module-name }}" -CustomPowershellModulePath $fullPoShCustomModulePath -SHA "${{ github.sha }}" -Owner $splitRepositoryName[0] -Repository $splitRepositoryName[1] -VersionConfigurationPath (Join-Path "${{ github.workspace }}" "${{ inputs.version-configuration-path }}") -AuthToken ${{ secrets.GITHUB_TOKEN }} -WorkspaceName "${{ inputs.workspace-name }}" -OverrideIncrementParts $overrideIncrementParts -Verbose
+        "new-version=$newVersion" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+    - name: Commit New Version
+      shell: pwsh
       run: |
-        if [[ -n "${SSH_AUTH_SOCK}" && -n "${SSH_AGENT_PID}" ]]; then
-            echo "Existed ssh agent pid: ${SSH_AGENT_PID}"
-            echo "Existed ssh auth sock: ${SSH_AUTH_SOCK}"
-            echo "INIT_SSH_AGENT_PID=${SSH_AGENT_PID}" >> $GITHUB_OUTPUT
-            echo "INIT_SSH_AUTH_SOCK=${SSH_AUTH_SOCK}" >> $GITHUB_OUTPUT
-            eval "$(ssh-agent -s)" > /dev/null
-        else
-            eval "$(ssh-agent -s)" > /dev/null
-        fi
-        mkdir -p ~/.ssh
-        touch ~/.ssh/known_hosts
-        echo "New ssh agent pid: ${SSH_AGENT_PID}"
-        echo "New ssh auth sock: ${SSH_AUTH_SOCK}"
-        echo "SSH_AGENT_PID=${SSH_AGENT_PID}" >> $GITHUB_ENV
-        echo "SSH_AUTH_SOCK=${SSH_AUTH_SOCK}" >> $GITHUB_ENV
+        function Invoke-CommandSafely {
+          param(
+            [string]
+            $Command
+          )
 
-    - name: Add source repo key
-      if: ${{ inputs.source_repo_ssh_key != '' && inputs.source_repo != '' && steps.ssh_agent.outcome != 'skipped' }}
-      shell: bash
-      env:
-        SOURCE_REPO: ${{ inputs.source_repo }}
-        SOURCE_REPO_SSH_KEY: ${{ inputs.source_repo_ssh_key }}
-      run: |
-          echo "::add-mask::${SOURCE_REPO_SSH_KEY}"
-          ssh-add - <<< "${SOURCE_REPO_SSH_KEY}"
+          Invoke-Expression "& $Command" -ErrorAction Stop
+          
+          if ($LASTEXITCODE -ne 0) {
+            throw "Command [$Command] failed to execute."
+          }
+        }
 
-          HOST=$(grep -oP '(?<=@)[^/:]+' <<< "${SOURCE_REPO}")
-          echo "::add-mask::$HOST"
-          IPS=$(nslookup "$HOST" | awk '/^Address: / { print $2 }')
-          for IP in $IPS; do
-            echo "::add-mask::$IP"
-          done
+        Write-Host "====== Setting up git ======"
+        Invoke-CommandSafely "git config --global user.name ""$env:GITHUB_ACTOR"""
+        Invoke-CommandSafely "git config --global user.email ""$env:GITHUB_ACTOR@users.noreply.github.com"""
+        Invoke-CommandSafely "git config --global push.followTags true"
 
-          HOST_KEYS=$(ssh-keyscan -H "$HOST" 2>/dev/null)
-          while IFS= read -r KEY_LINE; do
-            CONSTANT_PART=$(awk '{print $2, $3}' <<< "$KEY_LINE")
-            if grep -q "$CONSTANT_PART" ~/.ssh/known_hosts; then
-                ssh-keygen -R $HOST
-            fi
-            echo "$KEY_LINE" >> ~/.ssh/known_hosts
-          done <<< "$HOST_KEYS"
+        Write-Host
+        Write-Host "====== Pulling last changes ======"
+        Invoke-CommandSafely "git stash"
+        Invoke-CommandSafely "git pull"
+        Invoke-CommandSafely "git stash pop"
 
-    - name: Add svace analyze server key
-      if: ${{ inputs.svace_analyze_ssh_key != '' && inputs.svace_analyze_host != '' && steps.ssh_agent.outcome != 'skipped' }}
-      shell: bash
-      env:
-        SVACE_ANALYZE_HOST: ${{ inputs.svace_analyze_host }}
-        SVACE_ANALYZE_SSH_KEY: ${{ inputs.svace_analyze_ssh_key }}
-      run: |
-        echo "::add-mask::${SVACE_ANALYZE_SSH_KEY}"
-        ssh-add - <<< "${SVACE_ANALYZE_SSH_KEY}"
+        Write-Host
+        Write-Host "====== Submitting changes ======"
+        $annotation = "Bumped ${{ inputs.app-name }}$([string]::IsNullOrWhiteSpace('${{ inputs.app-name }}') ? [string]::Empty : ' ')version to ${{ env.new-version }}"
+        Invoke-CommandSafely "git commit -am ""[automated] $annotation [skip ci]"""
 
-        HOST="${SVACE_ANALYZE_HOST}"
-        echo "::add-mask::$HOST"
-        IPS=$(nslookup "$HOST" | awk '/^Address: / { print $2 }')
-        for IP in $IPS; do
-          echo "::add-mask::$IP"
-        done
+        if ("${{ inputs.skip-tag }}" -eq "false") {
+          Invoke-CommandSafely "git tag -a -m ""$annotation"" ""${{ inputs.app-name }}$([string]::IsNullOrWhiteSpace('${{ inputs.app-name }}') ? [string]::Empty : '-')v${{ env.new-version }}"""
+        }
 
-        HOST_KEYS=$(ssh-keyscan -H "$HOST" 2>/dev/null)
-        while IFS= read -r KEY_LINE; do
-          CONSTANT_PART=$(awk '{print $2, $3}' <<< "$KEY_LINE")
-          if grep -q "$CONSTANT_PART" ~/.ssh/known_hosts; then
-              ssh-keygen -R $HOST
-          fi
-          echo "$KEY_LINE" >> ~/.ssh/known_hosts
-        done <<< "$HOST_KEYS"
-
-    - name: Build dependency images
-      id: build
-      shell: bash
-      run: |
-        source "$(werf ci-env github --as-file)"
-        werf build --repo=${{ inputs.module_source }}/${{ inputs.module_name }} --save-build-report --build-report-path images_tags_werf.json
-      env:
-        MODULES_MODULE_TAG: ${{ inputs.module_tag }}
-        SVACE_ANALYZE_HOST: "${{ inputs.svace_analyze_host }}"
-        SVACE_ANALYZE_SSH_USER: "${{ inputs.svace_analyze_ssh_user }}"
-        SVACE_ENABLED: "${{ inputs.svace_enabled }}"
-
-    - name: Cleanup ssh-agent
-      if: ${{ steps.ssh_agent.outcome != 'skipped' && always() }}
-      shell: bash
-      run: |
-        echo "Killing ssh agent pid: ${SSH_AGENT_PID}"
-        kill -3 ${SSH_AGENT_PID}
-        echo "Initial ssh agent pid: ${{ steps.ssh_agent.outputs.INIT_SSH_AGENT_PID }}"
-
-    - name: Bundle the module image
-      shell: bash
-      run: |
-        IMAGE_SRC="$(jq -r '.Images."bundle".DockerImageName' images_tags_werf.json)"
-        IMAGE_DST="$(jq -r '.Images.bundle.DockerRepo' images_tags_werf.json):${{ inputs.module_tag }}"
-        echo "✨ Bundle image : Pushing ${IMAGE_SRC} to ${IMAGE_DST}"
-        crane copy ${IMAGE_SRC} ${IMAGE_DST}
-
-    - name: Prepare the release-channel image
-      shell: bash
-      run: |
-        IMAGE_SRC="$(jq -r '.Images."release-channel-version".DockerImageName' images_tags_werf.json)"
-        IMAGE_DST="$(jq -r '.Images."release-channel-version".DockerRepo' images_tags_werf.json)/release:${{ inputs.module_tag }}"
-        echo "✨ Release-channel image : Pushing ${IMAGE_SRC} to ${IMAGE_DST}"
-        crane copy ${IMAGE_SRC} ${IMAGE_DST}
-
-    - name: Register ${{ inputs.module_name }} module
-      shell: bash
-      run: |
-        echo "✨ Register the module ${{ inputs.module_name }}"
-        crane append \
-          --oci-empty-base \
-          --new_layer "" \
-          --new_tag "${{ inputs.module_source }}:${{ inputs.module_name }}"
+        Invoke-CommandSafely "git push"
