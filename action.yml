@@ -51,7 +51,7 @@ runs:
           GithubRepository = "${{ github.repository }}"
           PoshCustomModulePath = "${{ inputs.posh-custom-module-path }}"
           OverrideIncrementParts = "${{ inputs.override-increment-parts }}"
-          ProjectType = ${{ inputs.project-type }}
+          ProjectType = "${{ inputs.project-type }}"
           PoshModuleName = "${{ inputs.posh-module-name }}"
           SHA = "${{ github.sha }}"
           VersionConfigurationPath = "${{ inputs.version-configuration-path }}"
