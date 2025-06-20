@@ -24,6 +24,7 @@ v1.0.1
 | **skip-tag** | Indicates if wether the workflow will create tag or not |
 | **workspace-name** | Name of npm-workspace where version need to be incremented. Can be specified in case of project type `Node` |
 | **override-increment-parts** | Comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on PR's label |
+| **root-path** | Root path of target project |
 
 **Notes**
 
