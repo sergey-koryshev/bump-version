@@ -28,7 +28,6 @@ inputs:
   root-path:
     description: 'Root path of target project'
     required: false
-    default: '.'
 outputs:
   new-version:
     description: 'Incremented version'
