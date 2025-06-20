@@ -35,9 +35,6 @@ outputs:
 
 runs:
   using: 'composite'
-  defaults:
-    run:
-      working-directory: ${{ inputs.root-path }}
   steps:
     - name: Checkout build-system repository
       uses: actions/checkout@v4
@@ -51,6 +48,7 @@ runs:
     - name: Bump version
       id: bump-version
       shell: pwsh
+      working-directory: ${{ inputs.root-path }}
       run: |
         $params = @{
           GithubWorkspace = "${{ github.workspace }}"
