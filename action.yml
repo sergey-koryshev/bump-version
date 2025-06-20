@@ -44,7 +44,6 @@ runs:
         ref: version-helper-v1.4.0
     - name: Pull latest changes
       shell: bash
-      working-directory: ${{ inputs.root-path }}
       run: git pull
     - name: Bump version
       id: bump-version
@@ -65,7 +64,6 @@ runs:
         . (Join-Path "${{ github.action_path }}" "build/bump-version-step.ps1") @params
     - name: Commit New Version
       shell: pwsh
-      working-directory: ${{ inputs.root-path }}
       run: |
         function Invoke-CommandSafely {
           param(
