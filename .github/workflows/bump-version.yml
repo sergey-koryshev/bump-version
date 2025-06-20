@@ -1,0 +1,27 @@
+name: Increment Version Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'action.yml'
+
+jobs:
+  create_label:
+    name: Increment version for 'Bump Version' action
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Increment Version
+        uses: sergey-koryshev/bump-version@main
+        with:
+          project-type: Custom
+          posh-custom-module-path: 'build/bump-version.psm1'
+          version-configuration-path: version-configuration.json
+          skip-tag: true

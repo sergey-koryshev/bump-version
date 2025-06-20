@@ -1,7 +1,9 @@
 name: Validation Build
 
 on:
-  push:
+  workflow_run:
+    workflows: [ Increment Version Build ]
+    types: [ completed ]
     branches: [ main ]
   pull_request:
     branches: [ main ]
@@ -15,6 +17,7 @@ jobs:
       version-configuration-path: version-configuration.json
       scripts-ref: create-version-label-v1.4.3
   validate-action:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'pull_request' }}
     name: "Validate action file"
     runs-on: ubuntu-latest
     steps:
