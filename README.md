@@ -54,4 +54,6 @@ function Set-Version {
     ...
   }
 }
+
+Export-ModuleMember -Function @('Get-Version', 'Set-Version')
 ```
