@@ -1,43 +1,40 @@
-name: "Bump Version"
-description: "The action increments version of specified project and submit it to repository"
-
+name: 'Bump Version'
+description: 'The action increments version of specified project and submit it to repository'
 inputs:
   project-type:
+    description: 'Project type: Node, Posh, Custom'
     required: true
-    type: string
   version-configuration-path:
+    description: 'Full path to version configuration'
     required: true
-    type: string
   app-name:
+    description: 'Project name (used for commit name)'
     required: false
-    type: string
-    default: ""
   posh-module-name:
+    description: 'Name of powershell module, needs to be specified in case of project type [Posh]'
     required: false
-    type: string
   posh-custom-module-path:
+    description: 'Path to powershell module with custom logic to get/set version, needs to be specified in case of project type [Custom]'
     required: false
-    type: string
   skip-tag:
+    description: 'Indicates if wether the workflow will create tag or not'
     required: false
-    default: false
-    type: boolean
   workspace-name:
+    description: 'Name of npm-workspace where version need to be incremented. Can be specified in case of project type [Node]'
     required: false
-    type: string
-    default: ""
   override-increment-parts:
+    description: 'Comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on label of PR'
     required: false
-    type: string
-    default: ""
-
+  root-path:
+    description: 'Root path of target project'
+    required: false
 outputs:
   new-version:
-    description: "Incremented version"
+    description: 'Incremented version'
     value: ${{ steps.bump-version.outputs.new-version }}
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Checkout build-system repository
       uses: actions/checkout@v4
@@ -46,33 +43,25 @@ runs:
         path: sk-build-system
         ref: version-helper-v1.4.0
     - name: Pull latest changes
+      shell: bash
       run: git pull
     - name: Bump version
       id: bump-version
       shell: pwsh
+      working-directory: ${{ inputs.root-path }}
       run: |
-        $env:PSModulePath = $env:PSModulePath + "$([System.IO.Path]::PathSeparator)$(Join-Path "${{ github.workspace }}" "sk-build-system" "scripts/ps")"
-        Import-Module VersionHelper -Force -Verbose
-        $splitRepositoryName = "${{ github.repository }}" -split "/"
-
-        if ($splitRepositoryName.Length -ne 2) {
-          throw "Repository name cannot be parsed: ${{ github.repository }}"
+        $params = @{
+          GithubWorkspace = "${{ github.workspace }}"
+          GithubRepository = "${{ github.repository }}"
+          PoshCustomModulePath = "${{ inputs.posh-custom-module-path }}"
+          OverrideIncrementParts = "${{ inputs.override-increment-parts }}"
+          ProjectType = "${{ inputs.project-type }}"
+          PoshModuleName = "${{ inputs.posh-module-name }}"
+          SHA = "${{ github.sha }}"
+          VersionConfigurationPath = "${{ inputs.version-configuration-path }}"
+          WorkspaceName = "${{ inputs.workspace-name }}"
         }
-
-        $fullPoShCustomModulePath = $null
-
-        if (-not ([string]::IsNullOrWhiteSpace("${{ inputs.posh-custom-module-path }}"))) {
-          $fullPoShCustomModulePath = $(Join-Path "${{ github.workspace }}" "${{ inputs.posh-custom-module-path }}")
-        }
-
-        $overrideIncrementParts = @()
-
-        if (-not ([string]::IsNullOrWhiteSpace("${{ inputs.override-increment-parts }}"))) {
-          $overrideIncrementParts = "${{ inputs.override-increment-parts }}" -split ","
-        }
-
-        $newVersion = Submit-NewVersionLabel -ProjectType ${{ inputs.project-type }} -PowerShellModuleName "${{ inputs.posh-module-name }}" -CustomPowershellModulePath $fullPoShCustomModulePath -SHA "${{ github.sha }}" -Owner $splitRepositoryName[0] -Repository $splitRepositoryName[1] -VersionConfigurationPath (Join-Path "${{ github.workspace }}" "${{ inputs.version-configuration-path }}") -AuthToken ${{ secrets.GITHUB_TOKEN }} -WorkspaceName "${{ inputs.workspace-name }}" -OverrideIncrementParts $overrideIncrementParts -Verbose
-        "new-version=$newVersion" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        . (Join-Path "${{ github.action_path }}" "build/bump-version-step.ps1") @params
     - name: Commit New Version
       shell: pwsh
       run: |

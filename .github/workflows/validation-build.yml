@@ -1,0 +1,44 @@
+name: Validation Build
+
+on:
+  workflow_run:
+    workflows: [ Increment Version Build ]
+    types: [ completed ]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  label_check:
+    if: ${{ github.event_name == 'pull_request' }}
+    name: Pull Request Label Checker
+    uses: sergey-koryshev/build-system/.github/workflows/pr-label-checker.yml@create-version-label-v1.4.3
+    with:
+      version-configuration-path: version-configuration.json
+      scripts-ref: create-version-label-v1.4.3
+  validate-action:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'pull_request' }}
+    name: "Validate action file"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install YAML linter
+        run: |
+          npm install -g yaml-lint
+
+      - name: Validate action.yml syntax
+        run: |
+          yamllint action.yml
+
+      - name: Validate action.yml against GitHub Action schema
+        uses: cardinalby/schema-validator-action@v3
+        with:
+          file: 'action.yml'
+          schema: 'https://json.schemastore.org/github-action.json'
