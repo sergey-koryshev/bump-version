@@ -62,6 +62,8 @@ runs:
           WorkspaceName = "${{ inputs.workspace-name }}"
         }
         . (Join-Path "${{ github.action_path }}" "build/bump-version-step.ps1") @params
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Commit New Version
       shell: pwsh
       run: |
