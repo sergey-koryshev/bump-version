@@ -101,3 +101,5 @@ runs:
         }
 
         Invoke-CommandSafely "git push"
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
