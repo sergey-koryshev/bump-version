@@ -42,9 +42,13 @@ runs:
         repository: sergey-koryshev/build-system
         path: sk-build-system
         ref: version-helper-v1.4.0
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
     - name: Pull latest changes
       shell: bash
       run: git pull
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
     - name: Bump version
       id: bump-version
       shell: pwsh
