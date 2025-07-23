@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
 
       - name: Increment Version
         uses: sergey-koryshev/bump-version@main
@@ -24,4 +26,3 @@ jobs:
           project-type: Custom
           posh-custom-module-path: 'build/bump-version.psm1'
           version-configuration-path: version-configuration.json
-          skip-tag: true
