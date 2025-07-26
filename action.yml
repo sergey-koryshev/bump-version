@@ -96,7 +96,8 @@ runs:
         $annotation = "Bumped ${{ inputs.app-name }}$([string]::IsNullOrWhiteSpace('${{ inputs.app-name }}') ? [string]::Empty : ' ')version to ${{ env.new-version }}"
         Invoke-CommandSafely "git commit -am ""[automated] $annotation [skip ci]"""
 
-        if ("${{ inputs.skip-tag }}" -eq "false") {
+        $skipTag = "${{ inputs.skip-tag }}"
+        if ([string]::IsNullOrWhiteSpace($skipTag) -or $skipTag -eq "false") {
           Invoke-CommandSafely "git tag -a -m ""$annotation"" ""${{ inputs.app-name }}$([string]::IsNullOrWhiteSpace('${{ inputs.app-name }}') ? [string]::Empty : '-')v${{ env.new-version }}"""
         }
 
