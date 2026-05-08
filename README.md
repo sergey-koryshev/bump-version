@@ -25,6 +25,7 @@ v1.0.1
 | **workspace-name** | Name of npm-workspace where version need to be incremented. Can be specified in case of project type `Node` |
 | **override-increment-parts** | Comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on PR's label |
 | **root-path** | Root path of target project |
+| **default-increment-part** | Name of increment part to be incremented by default if there is no linked PR |
 
 **Notes**
 
