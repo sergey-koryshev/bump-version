@@ -58,7 +58,7 @@ process {
     AuthToken                  = $env:GITHUB_TOKEN
     WorkspaceName              = $WorkspaceName
     OverrideIncrementParts     = @()
-    DefaultIncrementingPart    = $DefaultIncrementPart
+    DefaultIncrementingPart    = $null
     Verbose                    = $true
   }
 
@@ -68,6 +68,10 @@ process {
 
   if (-not ([string]::IsNullOrWhiteSpace($OverrideIncrementParts))) {
     $params['OverrideIncrementParts'] = $OverrideIncrementParts -split ","
+  }
+
+  if (-not ([string]::IsNullOrWhiteSpace($DefaultIncrementPart))) {
+    $params['DefaultIncrementingPart'] = $DefaultIncrementPart
   }
 
   Write-Host "Invoking method Submit-NewVersionLabel from VersionHelper module"
