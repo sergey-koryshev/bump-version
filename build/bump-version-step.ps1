@@ -25,7 +25,10 @@ param (
   $VersionConfigurationPath,
 
   [string]
-  $WorkspaceName
+  $WorkspaceName,
+
+  [string]
+  $DefaultIncrementPart
 )
 
 begin {
@@ -55,6 +58,7 @@ process {
     AuthToken                  = $env:GITHUB_TOKEN
     WorkspaceName              = $WorkspaceName
     OverrideIncrementParts     = @()
+    DefaultIncrementingPart    = $DefaultIncrementPart
     Verbose                    = $true
   }
 

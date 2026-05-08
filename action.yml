@@ -28,6 +28,9 @@ inputs:
   root-path:
     description: 'Root path of target project'
     required: false
+  default-increment-part:
+    description: 'Version part to increment by default'
+    required: false
 outputs:
   new-version:
     description: 'Incremented version'
@@ -60,6 +63,7 @@ runs:
           SHA = "${{ github.sha }}"
           VersionConfigurationPath = "${{ inputs.version-configuration-path }}"
           WorkspaceName = "${{ inputs.workspace-name }}"
+          DefaultIncrementPart = "${{ inputs.default-increment-part }}"
         }
         . (Join-Path "${{ github.action_path }}" "build/bump-version-step.ps1") @params
       env:
