@@ -58,7 +58,6 @@ process {
     AuthToken                  = $env:GITHUB_TOKEN
     WorkspaceName              = $WorkspaceName
     OverrideIncrementParts     = @()
-    DefaultIncrementingPart    = $null
     Verbose                    = $true
   }
 
