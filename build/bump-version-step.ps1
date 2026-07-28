@@ -28,7 +28,13 @@ param (
   $WorkspaceName,
 
   [string]
-  $DefaultIncrementPart
+  $DefaultIncrementPart,
+
+  [string]
+  $Suffix,
+
+  [switch]
+  $RemoveSuffix
 )
 
 begin {
@@ -58,6 +64,7 @@ process {
     AuthToken                  = $env:GITHUB_TOKEN
     WorkspaceName              = $WorkspaceName
     OverrideIncrementParts     = @()
+    RemoveSuffix               = $RemoveSuffix
     Verbose                    = $true
   }
 
@@ -71,6 +78,10 @@ process {
 
   if (-not ([string]::IsNullOrWhiteSpace($DefaultIncrementPart))) {
     $params['DefaultIncrementingPart'] = $DefaultIncrementPart
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($Suffix)) {
+    $params['Suffix'] = $Suffix
   }
 
   Write-Host "Invoking method Submit-NewVersionLabel from VersionHelper module"

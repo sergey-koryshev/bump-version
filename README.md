@@ -1,35 +1,37 @@
-# Bump Version action
+# Bump Version Action
 
-Increments version of specified project and submit it to repository with the following commit:
+Increments the version of a specified project and commits the changes to the repository with the following commit message:
 
 ```
 [automated] Bumped My App version to 1.0.1 [skip ci]
 ```
 
-and tag (in case of `skip-tag` parameter is not specified):
+And creates a tag (unless the `skip-tag` parameter is specified):
 
 ```
 v1.0.1
 ```
 
-**Input Parameters:**
+## Input Parameters
 
 | Parameter Name | Description |
 | - | - |
-| **app-name** | Project name (used for commit name) |
+| **app-name** | Project name (used for commit message) |
 | **project-type** | Project type: `Node`, `Posh`, `Custom` |
-| **version-configuration-path** | Full path to version configuration |
-| **posh-module-name** | Name of powershell module, needs to be specified in case of project type `Posh` |
-| **posh-custom-module-path** | Path to powershell module with custom logic to get/set version, needs to be specified in case of project type `Custom` |
-| **skip-tag** | Indicates if wether the workflow will create tag or not |
-| **workspace-name** | Name of npm-workspace where version need to be incremented. Can be specified in case of project type `Node` |
-| **override-increment-parts** | Comma separated version parts to increment. If specified, it forces the workflow to increment specified version parts instead of determined based on PR's label |
+| **version-configuration-path** | Full path to version configuration file |
+| **posh-module-name** | Name of PowerShell module, required when project type is `Posh` |
+| **posh-custom-module-path** | Path to PowerShell module with custom logic for getting/setting version, required when project type is `Custom` |
+| **skip-tag** | Indicates whether the workflow should create a tag or not |
+| **workspace-name** | Name of npm workspace where version needs to be incremented. Can be specified when project type is `Node` |
+| **override-increment-parts** | Comma-separated version parts to increment. If specified, forces the workflow to increment these parts instead of determining based on PR labels |
 | **root-path** | Root path of target project |
 | **default-increment-part** | Name of increment part to be incremented by default if there is no linked PR |
+| **suffix** | Name of suffix to set |
+| **remove-suffix** | Indicates whether the current suffix should be removed |
 
-**Notes**
+## Notes
 
-If you specify project type as `Custom` then you need to specify path to custom `PS` module which must have the following functions implemented:
+If you specify project type as `Custom`, you must provide a path to a custom PowerShell module that implements the following functions:
 
 ```posh
 function Get-Version {
