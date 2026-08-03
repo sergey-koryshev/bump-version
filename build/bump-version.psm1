@@ -29,7 +29,13 @@ function Set-Version {
     $OldVersion,
 
     [string]
-    $NewVersion
+    $OldSuffix,
+
+    [string]
+    $NewVersion,
+
+    [string]
+    $NewSuffix
   )
 
   begin {
