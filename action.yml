@@ -51,7 +51,7 @@ runs:
       with:
         repository: sergey-koryshev/build-system
         path: sk-build-system
-        ref: version-helper-v1.6.0
+        ref: version-helper-v1.6.1
     - name: Pull latest changes
       shell: bash
       run: git pull
